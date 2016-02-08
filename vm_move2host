@@ -1,0 +1,42 @@
+#!/bin/bash
+
+VM=$1
+HOST=$2
+VG=lvm
+
+echo "Moving ${VM} to ${HOST}. Ok?"
+read
+
+SOURCE_LV=/dev/${VG}/${VM}
+if [ "${SOURCE_LV}" == "" ] ; then
+  echo "No source logical volume detected."
+  exit
+fi
+
+BLOCKS=`lvdisplay ${SOURCE_LV} | grep "Current LE" | cut -b26-`
+echo "- Source volumne ${SOURCE_LV} has ${BLOCKS} blocks"
+
+echo "* Creating snapshot volume ${SNAPSHOT_LV}"
+SNAPSHOT_LV=/dev/${VG}/${VM}_vm_move2host
+lvcreate -n${VM}_vm_move2host -s -L1G ${SOURCE_LV}
+
+echo "* Copying VM configuration"
+tar cf - /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml | ssh root@${HOST} "cd / ; tar xf -"
+ssh root@${HOST} "virsh define /etc/libvirt/qemu/${VM}.xml"
+
+echo "* Creating destination volume"
+ssh root@${HOST} "lvcreate -l${BLOCKS} -n${VM} ${VG_PSEUDO}"
+DEST_LV=/dev/${VG_PSEUDO}/${VM}
+
+echo "* Copying snapshot"
+dd bs=1M if=${SNAPSHOT_LV} | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
+
+echo "* Powering down VM"
+virsh shutdown ${VM}
+
+echo "* Transfering filesystem changes"
+lvs ${SNAPSHOT_LV}
+lvmsync ${SNAPSHOT_LV} ${HOST}:${DEST_LV}
+
+echo "* Starting VM on ${HOST}"
+ssh root@${HOST} "virsh start ${VM}"
