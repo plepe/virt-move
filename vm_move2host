@@ -18,6 +18,20 @@ BLOCKS=`lvdisplay ${SOURCE_LV} | grep "Current LE" | cut -b26-`
 SIZE=`echo "${BLOCKSIZE} * ${BLOCKS}" | bc`
 echo "- Source volumne ${SOURCE_LV} has ${BLOCKS} blocks"
 
+echo "* Check destination host"
+CHECK=`ssh root@${HOST} "if [ -e /dev/${VG}/${VM} ] ; then echo \"- Logical volumne already exists on destination host\" ; fi"`
+if [ "${CHECK}" != "" ] ; then
+  echo ${CHECK}
+  exit 1
+fi
+CHECK=`ssh root@${HOST} "if [ -e /etc/libvirt/qemu/${VM}.xml -o -e /etc/libvirt/qemu/autostart/${VM}.xml ] ; then echo \"- VM configuration already exists on destination host\" ; fi"`
+if [ "${CHECK}" != "" ] ; then
+  echo ${CHECK}
+  exit 1
+fi
+
+echo "- VM does not exist on destinaton host"
+
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
 SNAPSHOT_LV=/dev/${VG}/${VM}_vm_move2host
 lvcreate -n${VM}_vm_move2host -s -L1G ${SOURCE_LV}
