@@ -3,6 +3,7 @@
 VM=$1
 HOST=$2
 VG=lvm
+BLOCKSIZE=4194304
 
 echo "Moving ${VM} to ${HOST}. Ok?"
 read
@@ -14,6 +15,7 @@ if [ "${SOURCE_LV}" == "" ] ; then
 fi
 
 BLOCKS=`lvdisplay ${SOURCE_LV} | grep "Current LE" | cut -b26-`
+SIZE=`echo "${BLOCKSIZE} * ${BLOCKS}" | bc`
 echo "- Source volumne ${SOURCE_LV} has ${BLOCKS} blocks"
 
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
@@ -29,7 +31,7 @@ ssh root@${HOST} "lvcreate -l${BLOCKS} -n${VM} ${VG_PSEUDO}"
 DEST_LV=/dev/${VG_PSEUDO}/${VM}
 
 echo "* Copying snapshot"
-dd bs=1M if=${SNAPSHOT_LV} | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
+dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
 
 echo "* Powering down VM"
 virsh shutdown ${VM}

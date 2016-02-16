@@ -7,6 +7,6 @@ The script will create a snapshot of the current volume, transfer the snapshot t
 INSTALL
 =======
 ```sh
-apt-get install ruby
+apt-get install ruby pv
 gem install lvmsync
 ```
