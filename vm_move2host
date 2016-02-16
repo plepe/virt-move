@@ -2,13 +2,14 @@
 
 VM=$1
 HOST=$2
-VG=lvm
+SRC_VG=lvm
+DEST_VG=lvm
 BLOCKSIZE=4194304
 
 echo "Moving ${VM} to ${HOST}. Ok?"
 read
 
-SOURCE_LV=/dev/${VG}/${VM}
+SOURCE_LV=/dev/${SRC_VG}/${VM}
 if [ "${SOURCE_LV}" == "" ] ; then
   echo "No source logical volume detected."
   exit
@@ -19,7 +20,7 @@ SIZE=`echo "${BLOCKSIZE} * ${BLOCKS}" | bc`
 echo "- Source volumne ${SOURCE_LV} has ${BLOCKS} blocks"
 
 echo "* Check destination host"
-CHECK=`ssh root@${HOST} "if [ -e /dev/${VG}/${VM} ] ; then echo \"- Logical volumne already exists on destination host\" ; fi"`
+CHECK=`ssh root@${HOST} "if [ -e /dev/${DEST_VG}/${VM} ] ; then echo \"- Logical volumne already exists on destination host\" ; fi"`
 if [ "${CHECK}" != "" ] ; then
   echo ${CHECK}
   exit 1
@@ -33,7 +34,7 @@ fi
 echo "- VM does not exist on destinaton host"
 
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
-SNAPSHOT_LV=/dev/${VG}/${VM}_vm_move2host
+SNAPSHOT_LV=/dev/${SRC_VG}/${VM}_vm_move2host
 lvcreate -n${VM}_vm_move2host -s -L1G ${SOURCE_LV}
 
 echo "* Copying VM configuration"
@@ -41,8 +42,8 @@ tar cf - /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml | ssh
 ssh root@${HOST} "virsh define /etc/libvirt/qemu/${VM}.xml"
 
 echo "* Creating destination volume"
-ssh root@${HOST} "lvcreate -l${BLOCKS} -n${VM} ${VG_PSEUDO}"
-DEST_LV=/dev/${VG_PSEUDO}/${VM}
+ssh root@${HOST} "lvcreate -l${BLOCKS} -n${VM} ${DEST_VG}"
+DEST_LV=/dev/${DEST_VG}/${VM}
 
 echo "* Copying snapshot"
 dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
