@@ -36,17 +36,33 @@ echo "- VM does not exist on destinaton host"
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
 SNAPSHOT_LV=/dev/${SRC_VG}/${VM}_vm_move2host
 lvcreate -n${VM}_vm_move2host -s -L1G ${SOURCE_LV}
+if [ "$?" != "0" ] ; then
+  echo "Failure creating snapshot volume"
+  exit 1
+fi
 
 echo "* Copying VM configuration"
 tar cf - /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml | ssh root@${HOST} "cd / ; tar xf -"
 ssh root@${HOST} "virsh define /etc/libvirt/qemu/${VM}.xml"
+if [ "$?" != "0" ] ; then
+  echo "Failure defining host on destination"
+  exit 1
+fi
 
 echo "* Creating destination volume"
 ssh root@${HOST} "lvcreate -l${BLOCKS} -n${VM} ${DEST_VG}"
+if [ "$?" != "0" ] ; then
+  echo "Failure creating destination logical volume"
+  exit 1
+fi
 DEST_LV=/dev/${DEST_VG}/${VM}
 
 echo "* Copying snapshot"
 dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
+if [ "$?" != "0" ] ; then
+  echo "Failure copying snapshot"
+  exit 1
+fi
 
 echo "* Powering down VM"
 virsh shutdown ${VM}
@@ -54,6 +70,14 @@ virsh shutdown ${VM}
 echo "* Transfering filesystem changes"
 lvs ${SNAPSHOT_LV}
 lvmsync ${SNAPSHOT_LV} ${HOST}:${DEST_LV}
+if [ "$?" != "0" ] ; then
+  echo "Failure syncing filesystem changes"
+  exit 1
+fi
 
 echo "* Starting VM on ${HOST}"
 ssh root@${HOST} "virsh start ${VM}"
+if [ "$?" != "0" ] ; then
+  echo "Failure starting VM"
+  exit 1
+fi
