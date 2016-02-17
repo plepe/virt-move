@@ -5,7 +5,7 @@ SRC_VG=lvm
 DEST_VG=lvm
 BLOCKSIZE=4194304
 
-TEMP=`getopt -o h --long help,src-vg:,dest-vg: -n 'vm_move2host' -- "$@"`
+TEMP=`getopt -o h --long help,src-vg:,dest-vg: -n 'virt-move' -- "$@"`
 eval set -- "${TEMP}"
 
 # from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
@@ -28,7 +28,7 @@ while true ; do
 done
 
 if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
-  echo "Usage: vm_move2host [options] <vm> <host>"
+  echo "Usage: virt-move [options] <vm> <host>"
   echo "Move a virtual machine <vm> to a different <host>"
   echo
   echo "Available options:"
@@ -73,8 +73,8 @@ fi
 echo "- VM does not exist on destinaton host"
 
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
-SNAPSHOT_LV=/dev/${SRC_VG}/${VM}_vm_move2host
-lvcreate -n${VM}_vm_move2host -s -L1G ${SOURCE_LV}
+SNAPSHOT_LV=/dev/${SRC_VG}/${VM}_virt_move
+lvcreate -n${VM}_virt_move -s -L1G ${SOURCE_LV}
 if [ "$?" != "0" ] ; then
   echo "Failure creating snapshot volume"
   exit 1

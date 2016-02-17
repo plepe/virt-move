@@ -10,3 +10,11 @@ INSTALL
 apt-get install ruby pv
 gem install lvmsync
 ```
+
+USAGE
+=====
+```sh
+virt-move [options] <vm> <host>
+```
+
+Use `virt-move --help` to see available options.
