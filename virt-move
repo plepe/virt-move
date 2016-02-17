@@ -127,3 +127,10 @@ if [ "$?" != "0" ] ; then
   echo "Failure starting VM"
   exit 1
 fi
+
+echo "* Clean up"
+echo "You should remove:"
+echo "- The snapshot volume ${SNAPSHOT_LV}"
+echo "- The logical volume ${SOURCE_LV}"
+echo "- VM configuration /etc/libvirt/qemu/${VM}.xml"
+echo "- VM autostart configuration /etc/libvirt/qemu/autostart/${VM}.xml"
