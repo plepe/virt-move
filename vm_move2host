@@ -1,12 +1,27 @@
 #!/bin/bash
 
-TEMP=`getopt -o h --long help -n 'vm_move2host' -- "$@"`
+# Default values
+SRC_VG=lvm
+DEST_VG=lvm
+BLOCKSIZE=4194304
+
+TEMP=`getopt -o h --long help,src-vg:,dest-vg: -n 'vm_move2host' -- "$@"`
 eval set -- "${TEMP}"
 
 # from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
 while true ; do
   case "$1" in
     -h|--help) SHOW_HELP=1 ; shift ;;
+    --src-vg)
+      case "$2" in
+	"") shift 2 ;;
+	*) SRC_VG=$2 ; shift 2 ;;
+      esac ;;
+    --dest-vg)
+      case "$2" in
+	"") shift 2 ;;
+	*) DEST_VG=$2 ; shift 2 ;;
+      esac ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; exit 1 ;;
   esac
@@ -18,6 +33,10 @@ if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
   echo
   echo "Available options:"
   echo "  -h, --help                  Show help and exit"
+  echo "  --src-vg=<name>             Identifier of LVM volume group on source host"
+  echo "                                (default: lvm)"
+  echo "  --dest-vg=<name>            Identifier of LVM volume group on destination"
+  echo "                                host (default: lvm)"
   echo
 
   exit 0
@@ -25,9 +44,6 @@ fi
 
 VM=$1
 HOST=$2
-SRC_VG=lvm
-DEST_VG=lvm
-BLOCKSIZE=4194304
 
 echo "Moving ${VM} to ${HOST}. Ok?"
 read
