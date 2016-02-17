@@ -1,5 +1,28 @@
 #!/bin/bash
 
+TEMP=`getopt -o h --long help -n 'vm_move2host' -- "$@"`
+eval set -- "${TEMP}"
+
+# from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
+while true ; do
+  case "$1" in
+    -h|--help) SHOW_HELP=1 ; shift ;;
+    --) shift ; break ;;
+    *) echo "Internal error!" ; exit 1 ;;
+  esac
+done
+
+if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
+  echo "Usage: vm_move2host [options] <vm> <host>"
+  echo "Move a virtual machine <vm> to a different <host>"
+  echo
+  echo "Available options:"
+  echo "  -h, --help                  Show help and exit"
+  echo
+
+  exit 0
+fi
+
 VM=$1
 HOST=$2
 SRC_VG=lvm
