@@ -106,6 +106,13 @@ fi
 echo "* Powering down VM"
 virsh shutdown ${VM}
 
+echo "* Waiting for VM to be shut off"
+TEST="true"
+while [ "${TEST}" != "" ] ; do
+  TEST=`virsh list | tail -n+3 | cut -b 5-25 | sed 's/ *$//' | grep -x ${VM}`
+  sleep 1
+done
+
 echo "* Transfering filesystem changes"
 lvs ${SNAPSHOT_LV}
 lvmsync ${SNAPSHOT_LV} ${HOST}:${DEST_LV}
