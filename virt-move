@@ -49,6 +49,7 @@ echo "Moving ${VM} to ${HOST}. Ok?"
 read
 
 SOURCE_LV=/dev/${SRC_VG}/${VM}
+DEST_LV=/dev/${DEST_VG}/${VM}
 if [ "${SOURCE_LV}" == "" ] ; then
   echo "No source logical volume detected."
   exit
@@ -81,8 +82,11 @@ if [ "$?" != "0" ] ; then
 fi
 
 echo "* Copying VM configuration"
-tar cf - /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml | ssh root@${HOST} "cd / ; tar xf -"
-ssh root@${HOST} "virsh define /etc/libvirt/qemu/${VM}.xml"
+AUTOSTART=""
+if [ -e /etc/libvirt/qemu/autostart/${VM}.xml ] ; then
+  AUTOSTART="ln -s /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml"
+fi
+sed "s~${SOURCE_LV}~${DEST_LV}~" /etc/libvirt/qemu/${VM}.xml | ssh root@${HOST} "cat > /etc/libvirt/qemu/${VM}.xml ; ${AUTOSTART} ; virsh define /etc/libvirt/qemu/${VM}.xml"
 if [ "$?" != "0" ] ; then
   echo "Failure defining host on destination"
   exit 1
@@ -94,7 +98,6 @@ if [ "$?" != "0" ] ; then
   echo "Failure creating destination logical volume"
   exit 1
 fi
-DEST_LV=/dev/${DEST_VG}/${VM}
 
 echo "* Copying snapshot"
 dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M | ssh -C root@${HOST} "dd bs=1M of=${DEST_LV}"
