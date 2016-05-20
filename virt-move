@@ -119,6 +119,12 @@ if [ "$?" != "0" ] ; then
   exit 1
 fi
 
+echo "* Check snapshot volume"
+if [ "`lvdisplay ${SNAPSHOT_LV} | grep \"LV snapshot status     INACTIVE\"`" != "" ] ; then
+  echo "Snapshot became full - unusable. Please retry with a larger snapshot."
+  exit 1
+fi
+
 echo "* Powering down VM"
 virsh shutdown ${VM}
 
@@ -128,6 +134,12 @@ while [ "${TEST}" != "" ] ; do
   TEST=`virsh list | tail -n+3 | cut -b 5-25 | sed 's/ *$//' | grep -x ${VM}`
   sleep 1
 done
+
+echo "* Check snapshot volume"
+if [ "`lvdisplay ${SNAPSHOT_LV} | grep \"LV snapshot status     INACTIVE\"`" != "" ] ; then
+  echo "Snapshot became full - unusable. Please retry with a larger snapshot."
+  exit 1
+fi
 
 echo "* Transfering filesystem changes"
 lvs ${SNAPSHOT_LV}
