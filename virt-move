@@ -137,11 +137,14 @@ if [ "$?" != "0" ] ; then
   exit 1
 fi
 
+EXIT_CODE=0
 echo "* Starting VM on ${HOST}"
 ssh ${SSH_OPTS} root@${HOST} "virsh start ${VM}"
 if [ "$?" != "0" ] ; then
   echo "Failure starting VM"
-  exit 1
+  EXIT_CODE=1
+else
+  echo "Success"
 fi
 
 echo "* Clean up"
@@ -152,3 +155,5 @@ echo "- VM configuration \"rm /etc/libvirt/qemu/${VM}.xml\""
 if [ -e $AUTOSTART_FILE ] ; then
   echo "- VM autostart configuration /etc/libvirt/qemu/autostart/${VM}.xml"
 fi
+
+exit $EXIT_CODE
