@@ -94,7 +94,7 @@ if [ "$?" != "0" ] ; then
 fi
 
 echo "* Copying VM configuration"
-AUTOSTART=""
+AUTOSTART="echo -n"
 if [ -e /etc/libvirt/qemu/autostart/${VM}.xml ] ; then
   AUTOSTART="ln -s /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml"
 fi
