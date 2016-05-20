@@ -131,7 +131,7 @@ done
 
 echo "* Transfering filesystem changes"
 lvs ${SNAPSHOT_LV}
-lvmsync ${SNAPSHOT_LV} ${HOST}:${DEST_LV}
+lvmsync --rsh "ssh ${SSH_OPTS}" ${SNAPSHOT_LV} ${HOST}:${DEST_LV}
 if [ "$?" != "0" ] ; then
   echo "Failure syncing filesystem changes"
   exit 1
