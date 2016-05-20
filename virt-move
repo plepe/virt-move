@@ -4,9 +4,10 @@
 SRC_VG=lvm
 DEST_VG=lvm
 BLOCKSIZE=4194304
+SNAPSHOT_SIZE=1G
 SSH_OPTS=""
 
-TEMP=`getopt -o h --long help,src-vg:,dest-vg:,ssh-opts: -n 'virt-move' -- "$@"`
+TEMP=`getopt -o h --long help,src-vg:,dest-vg:,ssh-opts:,snapshot-size: -n 'virt-move' -- "$@"`
 eval set -- "${TEMP}"
 
 # from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
@@ -28,6 +29,11 @@ while true ; do
 	"") shift 2 ;;
 	*) SSH_OPTS=$2 ; shift 2 ;;
       esac ;;
+    --snapshot-size)
+      case "$2" in
+	"") shift 2 ;;
+	*) SNAPSHOT_SIZE=$2 ; shift 2 ;;
+      esac ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; exit 1 ;;
   esac
@@ -43,6 +49,7 @@ if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
   echo "                                (default: lvm)"
   echo "  --dest-vg=<name>            Identifier of LVM volume group on destination"
   echo "                                host (default: lvm)"
+  echo "  --snapshot-size=<size>      Size for snapshot volume (default: 1G)"
   echo "  --ssh-opts=\"...\"          Options to the ssh command"
   echo
 
@@ -87,7 +94,7 @@ echo "- VM does not exist on destinaton host"
 
 echo "* Creating snapshot volume ${SNAPSHOT_LV}"
 SNAPSHOT_LV=/dev/${SRC_VG}/${VM}_virt_move
-lvcreate -n${VM}_virt_move -s -L1G ${SOURCE_LV}
+lvcreate -n${VM}_virt_move -s -L"${SNAPSHOT_SIZE}" ${SOURCE_LV}
 if [ "$?" != "0" ] ; then
   echo "Failure creating snapshot volume"
   exit 1
