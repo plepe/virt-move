@@ -94,11 +94,12 @@ if [ "$?" != "0" ] ; then
 fi
 
 echo "* Copying VM configuration"
-AUTOSTART="echo -n"
-if [ -e /etc/libvirt/qemu/autostart/${VM}.xml ] ; then
-  AUTOSTART="ln -s /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml"
+AUTOSTART_FILE="/etc/libvirt/qemu/autostart/${VM}.xml"
+AUTOSTART_CMD="echo -n"
+if [ -e $AUTOSTART_FILE ] ; then
+  AUTOSTART_CMD="ln -s /etc/libvirt/qemu/${VM}.xml /etc/libvirt/qemu/autostart/${VM}.xml"
 fi
-sed "s~${SOURCE_LV}~${DEST_LV}~" /etc/libvirt/qemu/${VM}.xml | ssh ${SSH_OPTS} root@${HOST} "cat > /etc/libvirt/qemu/${VM}.xml ; ${AUTOSTART} ; virsh define /etc/libvirt/qemu/${VM}.xml"
+sed "s~${SOURCE_LV}~${DEST_LV}~" /etc/libvirt/qemu/${VM}.xml | ssh ${SSH_OPTS} root@${HOST} "cat > /etc/libvirt/qemu/${VM}.xml ; ${AUTOSTART_CMD} ; virsh define /etc/libvirt/qemu/${VM}.xml"
 if [ "$?" != "0" ] ; then
   echo "Failure defining host on destination"
   exit 1
@@ -145,7 +146,9 @@ fi
 
 echo "* Clean up"
 echo "You should remove:"
-echo "- The snapshot volume ${SNAPSHOT_LV}"
-echo "- The logical volume ${SOURCE_LV}"
-echo "- VM configuration /etc/libvirt/qemu/${VM}.xml"
-echo "- VM autostart configuration /etc/libvirt/qemu/autostart/${VM}.xml"
+echo "- The snapshot volume: \"lvremove ${SNAPSHOT_LV}\""
+echo "- The logical volume: \"lvremove ${SOURCE_LV}\""
+echo "- VM configuration \"rm /etc/libvirt/qemu/${VM}.xml\""
+if [ -e $AUTOSTART_FILE ] ; then
+  echo "- VM autostart configuration /etc/libvirt/qemu/autostart/${VM}.xml"
+fi
