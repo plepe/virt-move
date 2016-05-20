@@ -55,19 +55,24 @@ HOST=$2
 echo "Moving ${VM} to ${HOST}. Ok?"
 read
 
+if [ ! -d "/dev/${SRC_VG}/" ] ; then
+  echo "Source volume group '${SRC_VG}' not found"
+  exit 1
+fi
+
 SOURCE_LV=/dev/${SRC_VG}/${VM}
 DEST_LV=/dev/${DEST_VG}/${VM}
-if [ "${SOURCE_LV}" == "" ] ; then
-  echo "No source logical volume detected."
-  exit
+if [ ! -b ${SOURCE_LV} ] ; then
+  echo "No source logical volume '${SOURCE_LV}' detected."
+  exit 1
 fi
 
 BLOCKS=`lvdisplay ${SOURCE_LV} | grep "Current LE" | cut -b26-`
 SIZE=`echo "${BLOCKSIZE} * ${BLOCKS}" | bc`
-echo "- Source volumne ${SOURCE_LV} has ${BLOCKS} blocks"
+echo "- Source volume ${SOURCE_LV} has ${BLOCKS} blocks"
 
 echo "* Check destination host"
-CHECK=`ssh ${SSH_OPTS} root@${HOST} "if [ -e /dev/${DEST_VG}/${VM} ] ; then echo \"- Logical volumne already exists on destination host\" ; fi"`
+CHECK=`ssh ${SSH_OPTS} root@${HOST} "if [ ! -d \"/dev/${DEST_VG}/\" ] ; then echo \"Destination volume group '${DEST_VG}' not found\" ; fi ; if [ -e ${DEST_LV} ] ; then echo \"- Logical volumne already exists on destination host\" ; fi"`
 if [ "${CHECK}" != "" ] ; then
   echo ${CHECK}
   exit 1
