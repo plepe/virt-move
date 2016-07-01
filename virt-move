@@ -7,13 +7,14 @@ BLOCKSIZE=4194304
 SNAPSHOT_SIZE=1G
 SSH_OPTS=""
 
-TEMP=`getopt -o h --long help,src-vg:,dest-vg:,ssh-opts:,snapshot-size: -n 'virt-move' -- "$@"`
+TEMP=`getopt -o hy --long help,yes,src-vg:,dest-vg:,ssh-opts:,snapshot-size: -n 'virt-move' -- "$@"`
 eval set -- "${TEMP}"
 
 # from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
 while true ; do
   case "$1" in
     -h|--help) SHOW_HELP=1 ; shift ;;
+    -y|--yes) ASSUME_YES=1 ; shift ;;
     --src-vg)
       case "$2" in
 	"") shift 2 ;;
@@ -45,6 +46,7 @@ if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
   echo
   echo "Available options:"
   echo "  -h, --help                  Show help and exit"
+  echo "  -y, --yes                   Automatic yes to prompts, run non-interactively"
   echo "  --src-vg=<name>             Identifier of LVM volume group on source host"
   echo "                                (default: lvm)"
   echo "  --dest-vg=<name>            Identifier of LVM volume group on destination"
@@ -59,8 +61,10 @@ fi
 VM=$1
 HOST=$2
 
-echo "Moving ${VM} to ${HOST}. Ok?"
-read
+if [ "$ASSUME_YES" != "1" ] ; then
+  echo "Moving ${VM} to ${HOST}. Ok?"
+  read
+fi
 
 if [ ! -d "/dev/${SRC_VG}/" ] ; then
   echo "Source volume group '${SRC_VG}' not found"
