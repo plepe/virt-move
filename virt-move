@@ -6,8 +6,9 @@ DEST_VG=lvm
 BLOCKSIZE=4194304
 SNAPSHOT_SIZE=1G
 SSH_OPTS=""
+PV_OPTS=""
 
-TEMP=`getopt -o hy --long help,yes,src-vg:,dest-vg:,ssh-opts:,snapshot-size: -n 'virt-move' -- "$@"`
+TEMP=`getopt -o hy --long help,yes,src-vg:,dest-vg:,ssh-opts:,snapshot-size:,rate-limit: -n 'virt-move' -- "$@"`
 eval set -- "${TEMP}"
 
 # from: http://www.bahmanm.com/blogs/command-line-options-how-to-parse-in-bash-using-getopt
@@ -35,6 +36,11 @@ while true ; do
 	"") shift 2 ;;
 	*) SNAPSHOT_SIZE=$2 ; shift 2 ;;
       esac ;;
+    --rate-limit)
+      case "$2" in
+        "") shift 2;;
+        *) PV_OPTS=" --rate-limit $2" ; shift 2 ;;
+      esac ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; exit 1 ;;
   esac
@@ -53,6 +59,7 @@ if [ "$1" == "" -o "$2" == "" -o "${SHOW_HELP}" == "1" ] ; then
   echo "                                host (default: lvm)"
   echo "  --snapshot-size=<size>      Size for snapshot volume (default: 1G)"
   echo "  --ssh-opts=\"...\"          Options to the ssh command"
+  echo "  --rate-limit=<limit>        Limit transfer rate per second (e.g. 50m)"
   echo
 
   exit 0
@@ -124,7 +131,7 @@ if [ "$?" != "0" ] ; then
 fi
 
 echo "* Copying snapshot"
-dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M | ssh ${SSH_OPTS} root@${HOST} "dd bs=1M of=${DEST_LV}"
+dd bs=1M if=${SNAPSHOT_LV} | pv -s${SIZE} -B1M ${PV_OPTS} | ssh ${SSH_OPTS} root@${HOST} "dd bs=1M of=${DEST_LV}"
 if [ "$?" != "0" ] ; then
   echo "Failure copying snapshot"
   exit 1
