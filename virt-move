@@ -152,6 +152,11 @@ if [ "`lvdisplay ${SNAPSHOT_LV} | grep \"LV snapshot status     INACTIVE\"`" != 
   exit 1
 fi
 
+if [ "$ASSUME_YES" != "1" ] ; then
+  echo "Copying snapshot complete. Ready for power-down and transfering changes?"
+  read
+fi
+
 echo "* Powering down VM"
 virsh shutdown ${VM}
 
