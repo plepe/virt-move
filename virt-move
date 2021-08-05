@@ -163,7 +163,7 @@ virsh shutdown ${VM}
 echo "* Waiting for VM to be shut off"
 TEST="true"
 while [ "${TEST}" != "" ] ; do
-  TEST=`virsh list | tail -n+3 | cut -b 5-25 | sed 's/ *$//' | grep -x ${VM}`
+  TEST=`virsh list | tail -n+3 | sed 's/^\s*[0-9]\+\s*\([^ ]\+\).*$/\1/' | grep -x ${VM}`
   sleep 1
 done
 
